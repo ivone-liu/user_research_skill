@@ -4,10 +4,8 @@ description: >-
   Evidence-grounded early-stage user research framework for independent developers.
   Generate 20+ concrete user personas with hard demographic and consumption fields,
   evaluate a product idea using synthesized evidence from real-world public user traces,
-  support persona interview mode for deeper pain-point discovery, maintain persona
-  state updates, and optionally use a user-provided persona baseline CSV as a seed library.
-  Use when the user says "用研", "用户研究", "调研", "需求验证", "验证点子", "验证产品",
-  "目标用户", or wants structured personas, realistic feedback, and deep persona conversations.
+  support persona interview mode, maintain persona state updates, and use an embedded
+  persona baseline CSV library as a conditional seed source when relevant.
 author: Ivone <ivone@nibbly.cn>
 license: MIT
 ---
@@ -16,12 +14,12 @@ license: MIT
 
 <example>
 User: 用研 一个帮助家长快速判断食品配料是否适合宝宝的产品
-Assistant: [Builds source plan, persona matrix, key segments, and structured conclusions]
+Assistant: [Builds source plan, conditionally recalls relevant archetypes from the embedded persona library, generates personas, then outputs structured conclusions]
 </example>
 
 <example>
-User: 我给你一个画像 CSV，用它做基线，再生成目标用户画像
-Assistant: [Uses the CSV as persona baseline, not as proof of demand]
+User: 不要机械照搬画像库，如果合适就参考一部分，不够的你自己补
+Assistant: [Filters relevant archetypes, partially reuses matching ones, and generates additional personas in the same structure]
 </example>
 
 <example>
@@ -29,9 +27,36 @@ User: 深入画像 07，和她聊聊为什么她会犹豫下载
 Assistant: [Enters persona interview mode, then updates persona state and overall conclusions]
 </example>
 
+## Embedded Persona Baseline
+
+This skill package ships with an embedded persona baseline CSV:
+
+- Path: `data/persona_baseline.csv`
+- Rows: 3125
+- Columns: id, sys_platform, uuid, bstudio_create_time, name, avatar, profile, tag
+
+High-frequency tags observed in the embedded library:
+
+- 自由职业者: 300
+- 白领: 289
+- 基层管理者: 280
+- 大学生: 269
+- 新房业主: 250
+- 车主: 230
+- 宝妈: 190
+- 小城打工人: 190
+- 新婚夫妇: 189
+- 中小学生家长: 180
+- 蓝领: 170
+- 平台博主: 170
+
+This embedded CSV is **not market truth** and **not a fixed answer set**.
+It is a built-in persona archetype pool. Use it for archetype recall, segmentation reference,
+naming/profile structure, and gap detection. Do not treat it as direct evidence of product demand.
+
 ## Instructions
 
-为了执行本项技能，请严格遵循以下流程。这个技能的目标不是“让 AI 假装成用户闲聊”，而是建立一个基于真实样本痕迹与用户画像基线库的早期用研框架，并允许用户在研究过程中进入特定画像做深访式追问，同时把新信息回写到画像系统中。
+为了执行本项技能，请严格遵循以下流程。这个技能的目标不是“让 AI 假装成用户闲聊”，而是建立一个**基于真实样本痕迹 + 条件使用的画像基线库 + 动态补全画像**的早期用研框架，并允许用户在研究过程中进入特定画像做深访式追问，同时把新信息回写到画像系统中。
 
 ### 0. 先声明边界
 
@@ -40,7 +65,8 @@ Assistant: [Enters persona interview mode, then updates persona state and overal
 - 本技能适用于早期方向验证、画像拆分、需求压测、风险识别、画像深访模拟
 - 本技能不能替代真人访谈、真实留存数据、真实付费数据
 - 所有反馈必须优先来自真实公开样本的综合处理，而不是模型随意编造
-- 如果用户提供了画像库 CSV，该画像库只能作为人群原型基线与分群参考，不能自动等同于真实用户证据
+- 内置 CSV 与用户提供的画像库都只能作为**原型候选池与分群参考**，不能自动等同于真实用户证据
+- 画像库不是必须整包使用，只有在与当前产品、场景、决策链路相符时才应部分引用
 - 如果某一类人群缺少公开样本，必须明确说“样本不足，只能给低置信度推测”
 - 画像访谈模式中的“人”是综合原型，不是一个真实具体个体
 
@@ -58,26 +84,49 @@ Assistant: [Enters persona interview mode, then updates persona state and overal
 
 如果信息不完整，不要直接开始画像生成，先追问缺失项。
 
-### 2. 检查是否存在用户提供的画像基线库
+### 2. 确定画像基线来源优先级
 
-如果用户提供了 CSV 或其他画像库文件，必须优先执行以下动作：
+按以下优先级决定画像原型池：
 
-1. 读取文件结构
-2. 识别核心字段，例如：
-   - name
-   - profile
-   - tag
-   - demographic / behavioral text
-3. 判断这份画像库更适合作为：
-   - 人群分层种子
-   - 语义相近画像检索池
-   - 访谈原型候选池
-   - 画像命名与风格参考
-4. 向用户明确说明：
-   - 这份画像库能帮助提升分群覆盖度与原型召回能力
-   - 但不等于真实市场证据，后续仍需结合公开样本和真人验证
+1. 用户本轮新提供的画像库
+2. 本技能内置画像库 `data/persona_baseline.csv`
+3. 纯公开样本综合生成
 
-### 3. 先做样本来源计划
+规则如下：
+
+- 如果用户提供了新画像库，新画像库优先，内置库作为补充召回池
+- 如果用户没有提供新画像库，则默认先检查内置画像库
+- 如果画像库中没有足够接近的原型，则用公开样本补足
+- 如果画像库原型与当前任务明显不匹配，则**只参考其字段结构与书写方式，不复用具体画像内容**
+- 必须显式告诉用户当前使用的是：
+  - 用户画像库优先
+  - 内置画像库优先
+  - 纯公开样本模式
+  - 结构参考模式（只借格式，不借具体画像）
+
+### 3. 读取并理解画像库结构
+
+无论是用户新提供的画像库，还是内置画像库，都要先识别字段结构。
+
+对于内置库，默认字段为：
+
+- `id`
+- `sys_platform`
+- `uuid`
+- `bstudio_create_time`
+- `name`
+- `avatar`
+- `profile`
+- `tag`
+
+字段使用原则：
+
+- `tag`：优先用于分群、召回相近人群、构建高频标签池
+- `profile`：优先用于提取年龄、职业、收入、消费、目标、使用习惯等人物描述
+- `name`：可用作原型命名参考，但不要误认为是真实受访者
+- 其余字段主要作为元数据，一般不直接参与画像推理
+
+### 4. 先做样本来源计划
 
 在生成任何研究结论之前，先列出计划参考的真实公开样本类型。优先顺序如下：
 
@@ -87,7 +136,8 @@ Assistant: [Enters persona interview mode, then updates persona state and overal
 4. 产品测评、使用体验、访谈节选
 5. 招聘信息、行业报告、公开统计数据
 6. 用户提供的既有访谈、评论、问卷、客服记录
-7. 用户提供的画像基线库（仅作原型与分群参考）
+7. 用户新提供的画像基线库
+8. 技能内置画像基线库
 
 必须遵守以下规则：
 
@@ -97,23 +147,47 @@ Assistant: [Enters persona interview mode, then updates persona state and overal
 - 允许做综合归纳，但必须表述为：
   - “根据公开评论样本综合看……”
   - “从多个公开讨论中可见……”
-  - “结合用户提供的画像基线库与公开样本看……”
+  - “结合画像基线库与公开样本看……”
 
-### 4. 构建 20+ 用户画像矩阵
+### 5. 先做“相关性筛选”，再决定“部分复用 / 结构复用 / 全量自建”
+
+生成画像前，必须先执行三步：
+
+#### 5a. 相关性筛选
+从当前优先画像库中，筛选与产品最相关的标签与 profile 原型。
+优先考虑：
+
+- 场景相关性
+- 支付可能性
+- 痛点相似性
+- 决策链路相似性
+- 生活阶段相似性
+- 类目消费习惯相似性
+
+#### 5b. 使用决策
+根据筛选结果，必须在以下三种模式中选择一种，并说明原因：
+
+- **部分复用模式**：画像库中有一部分原型明显匹配，复用这些原型，再补新画像
+- **结构复用模式**：画像库具体内容不够匹配，但字段结构和写法适合参考，于是按相同结构新生成画像
+- **公开样本主导模式**：画像库与当前任务匹配度太低，仅作弱参考，主要用公开样本综合生成
+
+#### 5c. 缺口补全
+在原型筛选与使用决策之后，检查是否缺失以下类型：
+
+- 高痛点高付费
+- 强需求低预算
+- 高谨慎用户
+- 白嫖倾向用户
+- 高传播潜力用户
+- 高流失风险用户
+- 高误解风险用户
+- 边缘但可能高价值用户
+
+如果缺失，必须用公开样本综合方式补足。
+
+### 6. 构建 20+ 用户画像矩阵
 
 默认生成 20 到 30 个用户画像，不低于 20 个。
-
-如果存在用户提供的画像基线库，必须优先采用以下策略：
-
-- 先从画像库中筛出与产品场景最相关的人群标签与 profile
-- 再在这些基础上补充缺失的边缘画像、高价值画像、风险画像
-- 生成时要区分：
-  - 库中相近原型
-  - 库外补充原型
-- 必须标明该画像主要来自：
-  - 画像库映射
-  - 画像库 + 公开样本综合
-  - 纯公开样本综合
 
 每个画像必须包含以下字段：
 
@@ -140,9 +214,15 @@ Assistant: [Enters persona interview mode, then updates persona state and overal
 - 样本依据说明
 - 状态版本（初始为 v1）
 - 状态标签（初始为：未深访 / 初步判断）
-- 来源类型（画像库映射 / 公开样本综合 / 混合）
+- 来源类型（用户库映射 / 内置库映射 / 公开样本综合 / 混合 / 结构复用生成）
 
-### 5. 对每个画像进行证据约束下的产品评估
+要求：
+
+- 如果用了画像库，只能**部分吸收符合条件的原型**
+- 如果不够，必须由 AI 在相同结构下补齐新画像
+- 如果完全不匹配，则必须**沿用 CSV 的结构风格重新生成完整研究人群画像**
+
+### 7. 对每个画像进行证据约束下的产品评估
 
 每个画像都要分析：
 
@@ -164,7 +244,7 @@ Assistant: [Enters persona interview mode, then updates persona state and overal
 - 置信度
 - 依据类型
 
-### 6. Persona Interview Mode
+### 8. Persona Interview Mode
 
 当用户输入以下任一类型指令时，进入画像深访模式：
 
@@ -187,7 +267,7 @@ Assistant: [Enters persona interview mode, then updates persona state and overal
 - 对总分层结论的影响
 - 是否需要新增一个相近画像或拆分原画像
 
-### 7. Persona State Update Mechanism
+### 9. Persona State Update Mechanism
 
 当用户输入以下任一指令时，触发状态更新：
 
@@ -205,7 +285,7 @@ Assistant: [Enters persona interview mode, then updates persona state and overal
 - 判断是否需要拆分或合并画像
 - 在重大变化时自动轻重算总体结论
 
-### 8. 结构化结论面板
+### 10. 结构化结论面板
 
 最终输出必须包含：
 
@@ -219,8 +299,14 @@ Assistant: [Enters persona interview mode, then updates persona state and overal
 - 最终一句话判断
 - 下一步真人验证计划
 
-### 9. 交互指令
+### 11. README 与实际使用保持一致
 
-阶段性输出后，提供：
+此技能包自带：
 
-【助理】：(指令: 继续 / 深入:画像编号 / 进入画像对话:编号 / 退出画像对话 / 更新画像状态 / 更新画像:编号 / 回写到画像 / 重算结论 / 调整画像字段 / 重做分层 / 只看高付费人群 / 只看高痛点人群 / 输出验证计划 / 输出结构化结论 / 停止)
+- `README.md` 英文说明
+- `README.zh-CN.md` 中文说明
+- `references/original-prompt.org` 原始框架
+- `LICENSE` MIT 协议
+- `data/persona_baseline.csv` 内置画像基线库
+
+在后续维护时，必须保持 README、原始框架和技能规则一致，不允许 README 只写版本说明而缺少实际使用方式。

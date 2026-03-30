@@ -18,8 +18,36 @@ It should help the user:
 - It does not replace real interviews.
 - It does not replace real retention or payment data.
 - Composite personas are not real individuals.
-- Persona CSV libraries are baseline libraries, not market truth.
+- Persona CSV libraries are candidate archetype pools, not market truth.
 - Missing evidence must be marked low-confidence.
+
+* Core principle for CSV usage
+
+A CSV persona library must not be copied mechanically.
+
+The system must first decide:
+- which seeds are relevant
+- which should be partially reused
+- which should be ignored
+- whether only the structure should be reused
+
+The embedded baseline library in this package contains:
+- rows: 3125
+- columns: id, sys_platform, uuid, bstudio_create_time, name, avatar, profile, tag
+
+Top tags:
+- 自由职业者: 300
+- 白领: 289
+- 基层管理者: 280
+- 大学生: 269
+- 新房业主: 250
+- 车主: 230
+- 宝妈: 190
+- 小城打工人: 190
+- 新婚夫妇: 189
+- 中小学生家长: 180
+- 蓝领: 170
+- 平台博主: 170
 
 * Workflow
 
@@ -27,10 +55,13 @@ It should help the user:
 Extract product, problem, target users, scenarios, alternatives, and validation questions.
 
 ** Build a source plan
-Prefer reviews, forum discussions, social posts, product reviews, reports, user-provided research, and optional persona CSV baselines.
+Prefer reviews, forum discussions, social posts, product reviews, reports, user-provided research, embedded persona baseline, and optional user-provided persona CSV baselines.
 
-** Use persona CSV if provided
-Treat it as segmentation seed, similar-archetype retrieval pool, and persona baseline.
+** Perform relevance filtering first
+Before generating personas:
+- filter relevant archetypes
+- choose partial reuse / structure reuse / public-sample dominant mode
+- fill missing persona types
 
 ** Build 20 to 30 personas
 Each persona must include hard fields, source basis, state version, and source type.

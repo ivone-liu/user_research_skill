@@ -9,7 +9,10 @@ It helps you:
 - define the research task
 - plan evidence sources
 - generate 20+ personas
-- use public evidence plus optional persona CSV baselines
+- use public evidence plus an embedded or user-provided persona CSV baseline
+- partially reuse relevant persona seeds when appropriate
+- generate missing personas when the library is incomplete
+- ignore mismatched seeds while still reusing the CSV structure
 - run persona deep dives
 - update persona states
 - produce structured decision outputs
@@ -40,22 +43,28 @@ What I most want to validate:
 Please:
 1. structure the task
 2. build a source plan
-3. use my persona CSV if relevant
+3. selectively use my persona CSV if relevant
 4. generate 20+ personas
-5. output structured conclusions
+5. fill missing personas yourself if needed
+6. output structured conclusions
 ```
 
 ## How the CSV is used
 
-A user-provided persona CSV is treated as a persona baseline library, not as proof of demand.
+A persona CSV is treated as a **candidate archetype pool**, not as proof of demand.
 
-It can help with:
-- persona coverage
-- archetype retrieval
-- segmentation seeds
-- better deep-dive realism
+The skill should choose one of three modes:
 
-Current reviewed sample:
+- partial reuse mode
+- structure reuse mode
+- public-sample dominant mode
+
+This means:
+- if some seeds are relevant, use only those
+- if the content is weak but the structure is useful, keep the structure and generate new personas
+- if the CSV is not relevant, rely mostly on public-sample synthesis
+
+Embedded sample included in this package:
 - rows: 3125
 - columns: id, sys_platform, uuid, bstudio_create_time, name, avatar, profile, tag
 
@@ -70,3 +79,5 @@ Top tags:
 - 小城打工人: 190
 - 新婚夫妇: 189
 - 中小学生家长: 180
+- 蓝领: 170
+- 平台博主: 170
