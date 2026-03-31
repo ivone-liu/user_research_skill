@@ -21,38 +21,21 @@ It should help the user:
 - Persona CSV libraries are candidate archetype pools, not market truth.
 - Missing evidence must be marked low-confidence.
 
-* Core principle for CSV usage
+* Neutral example domains
 
-A CSV persona library must not be copied mechanically.
-
-The system must first decide:
-- which seeds are relevant
-- which should be partially reused
-- which should be ignored
-- whether only the structure should be reused
-
-The embedded baseline library in this package contains:
-- rows: 3125
-- columns: id, sys_platform, uuid, bstudio_create_time, name, avatar, profile, tag
-
-Top tags:
-- 自由职业者: 300
-- 白领: 289
-- 基层管理者: 280
-- 大学生: 269
-- 新房业主: 250
-- 车主: 230
-- 宝妈: 190
-- 小城打工人: 190
-- 新婚夫妇: 189
-- 中小学生家长: 180
-- 蓝领: 170
-- 平台博主: 170
+- cycling
+- running
+- hiking
+- strength training
+- outdoor communities
 
 * Workflow
 
 ** Parse the product task
 Extract product, problem, target users, scenarios, alternatives, and validation questions.
+
+** Collect required info first
+Before research, gather product name, one-line definition, problem solved, target users, usage scenario, alternatives, and main validation goal.
 
 ** Build a source plan
 Prefer reviews, forum discussions, social posts, product reviews, reports, user-provided research, embedded persona baseline, and optional user-provided persona CSV baselines.
